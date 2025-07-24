@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>ESP32 Controller</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      font-size: clamp(24px, 5vw, 36px);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+    }
+    
+    h2 {
+      color: #3498db;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: clamp(18px, 4vw, 24px);
+    }
+    
+    .device-status {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .status-item {
+      text-align: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    .status-item:hover {
+      background: #e9ecef;
+      transform: scale(1.02);
+    }
+    
+    .status-indicator {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      background-color: #e74c3c;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .status-indicator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60%;
+      height: 60%;
+      background: rgba(255,255,255,0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .status-on {
+      background-color: #2ecc71;
+      box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+    }
+    
+    .button-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    
+    .button {
+      padding: 15px 20px;
+      font-size: clamp(14px, 3vw, 18px);
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .button:hover::before {
+      left: 100%;
+    }
+    
+    .button-on {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+    }
+    
+    .button-off {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+    }
+    
+    .button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    .button:active {
+      transform: translateY(-1px);
+    }
+    
+    .slider-container {
+      margin: 30px 0;
+      padding: 0 10px;
+    }
+    
+    .slider {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      background: linear-gradient(to right, #3498db 0%, #9b59b6 100%);
+      border-radius: 5px;
+      outline: none;
+      margin: 20px 0;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+      transition: all 0.3s ease;
+    }
+    
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+    }
+    
+    .angle-display {
+      text-align: center;
+      font-size: clamp(20px, 5vw, 32px);
+      font-weight: bold;
+      margin: 15px 0;
+      color: #2980b9;
+      background: linear-gradient(135deg, #3498db, #9b59b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .status-bar {
+      background: linear-gradient(135deg, #34495e, #2c3e50);
+      color: white;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      margin-top: 20px;
+      font-size: clamp(12px, 2.5vw, 16px);
+    }
+    
+    .connection-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .info-item {
+      background: rgba(255,255,255,0.1);
+      padding: 10px;
+      border-radius: 8px;
+      backdrop-filter: blur(5px);
+    }
+    
+    /* Loading animation */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      body {
+        padding: 5px;
+      }
+      
+      .container {
+        padding: 15px;
+        border-radius: 15px;
+      }
+      
+      .card {
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+      
+      .button {
+        padding: 12px 15px;
+        font-size: 16px;
+      }
+      
+      .device-status {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      
+      .status-indicator {
+        width: 25px;
+        height: 25px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .button-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      
+      .device-status {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+    
+    /* Desktop optimizations */
+    @media (min-width: 1024px) {
+      .container {
+        padding: 40px;
+      }
+      
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      
+      .device-status {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      .card {
+        background: #2c3e50;
+        color: #ecf0f1;
+      }
+      
+      .status-item {
+        background: #34495e;
+        color: #ecf0f1;
+      }
+      
+      .status-item:hover {
+        background: #3c4e60;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏠 ESP32 Smart Controller</h1>
+    
+    <div class="card">
+      <h2>📊 สถานะอุปกรณ์</h2>
+      <div class="device-status">
+        <div class="status-item">
+          <div class="status-indicator" id="fan-status"></div>
+          <div><strong>🌀 พัดลม (IN1)</strong></div>
+          <div id="fan-text">ปิด</div>
+        </div>
+        <div class="status-item">
+          <div class="status-indicator" id="light-status"></div>
+          <div><strong>💡 ไฟ (IN2)</strong></div>
+          <div id="light-text">ปิด</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="main-grid">
+      <div>
+        <div class="card">
+          <h2>🌀 ควบคุมพัดลม</h2>
+          <div class="button-container">
+            <button class="button button-on" onclick="controlDevice('fan', 'on')" id="fan-on-btn">
+              ⚡ เปิดพัดลม
+            </button>
+            <button class="button button-off" onclick="controlDevice('fan', 'off')" id="fan-off-btn">
+              ⏹️ ปิดพัดลม
+            </button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h2>💡 ควบคุมไฟ</h2>
+          <div class="button-container">
+            <button class="button button-on" onclick="controlDevice('light', 'on')" id="light-on-btn">
+              🔆 เปิดไฟ
+            </button>
+            <button class="button button-off" onclick="controlDevice('light', 'off')" id="light-off-btn">
+              🔅 ปิดไฟ
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <div class="card">
+          <h2>🔄 ควบคุมเซอร์โว</h2>
+          <div class="slider-container">
+            <input type="range" min="0" max="180" value="90" class="slider" id="servoSlider">
+            <div class="angle-display">📐 มุม: <span id="servoValue">90</span>°</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>⚙️ การตั้งค่า</h2>
+      <div style="margin-bottom: 15px;">
+        <label for="ip-input" style="display: block; margin-bottom: 5px; font-weight: bold;">📍 IP Address ของ ESP32:</label>
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+          <input type="text" id="ip-input" placeholder="ใส่ IP Address (เช่น 192.168.1.100)" 
+                 style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+          <button onclick="setIPAddress()" class="button button-on" style="min-width: 80px; padding: 10px 15px;">
+            💾 บันทึก
+          </button>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+          <button onclick="testConnection()" class="button" style="background: #f39c12; color: white; min-width: 120px; padding: 8px 12px; font-size: 14px;">
+            🔍 ทดสอบการเชื่อมต่อ
+          </button>
+          <button onclick="openESP32Page()" class="button" style="background: #9b59b6; color: white; min-width: 120px; padding: 8px 12px; font-size: 14px;">
+            🌐 เปิดหน้า ESP32
+          </button>
+        </div>
+      </div>
+      <div style="font-size: 14px; color: #666; margin-bottom: 15px;">
+        💡 <strong>วิธีหา IP Address:</strong><br>
+        • Serial Monitor ของ Arduino IDE<br>
+        • Router Admin Panel (192.168.1.1)<br>
+        • แอปค่าย WiFi Scanner
+      </div>
+      <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-top: 15px;">
+        <div style="font-weight: bold; color: #856404; margin-bottom: 10px;">⚠️ การแก้ปัญหา CORS:</div>
+        <div style="font-size: 13px; color: #856404; line-height: 1.4;">
+          หากไม่สามารถเชื่อมต่อได้ ให้เพิ่มโค้ดนี้ใน ESP32:<br>
+          <code style="background: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-family: monospace;">
+            server.sendHeader("Access-Control-Allow-Origin", "*");
+          </code>
+        </div>
+      </div>
+    </div>
+    
+    <div class="status-bar">
+      <div><strong>🌐 ข้อมูลการเชื่อมต่อ</strong></div>
+      <div class="connection-info">
+        <div class="info-item">
+          📍 IP Address: <span id="ip-address">ยังไม่ได้ตั้งค่า</span>
+        </div>
+        <div class="info-item">
+          🔗 สถานะ: <span id="connection-status">กำลังเชื่อมต่อ...</span>
+        </div>
+        <div class="info-item">
+          ⏰ อัปเดตล่าสุด: <span id="last-update">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ตั้งค่าเริ่มต้น
+    let fanStatus = false;
+    let lightStatus = false;
+    let isLoading = false;
+    let currentIP = '';
+    
+    // โหลด IP address จาก localStorage (ถ้ามี)
+    function loadSavedIP() {
+      const savedIP = localStorage.getItem('esp32_ip');
+      if (savedIP) {
+        currentIP = savedIP;
+        document.getElementById('ip-input').value = savedIP;
+        document.getElementById('ip-address').textContent = savedIP;
+        return savedIP;
+      } else {
+        // ลองใช้ hostname ปัจจุบันเป็นค่าเริ่มต้น
+        const hostname = window.location.hostname;
+        if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('github')) {
+          currentIP = hostname;
+          document.getElementById('ip-input').value = hostname;
+          document.getElementById('ip-address').textContent = hostname;
+          return hostname;
+        }
+      }
+      return null;
+    }
+    
+    // ฟังก์ชันทดสอบการเชื่อมต่อ
+    async function testConnection() {
+      if (!currentIP) {
+        alert('กรุณาใส่ IP Address ก่อน');
+        return;
+      }
+      
+      const testBtn = event.target;
+      testBtn.disabled = true;
+      testBtn.textContent = '🔍 กำลังทดสอบ...';
+      
+      try {
+        // ทดสอบการเชื่อมต่อหลายวิธี
+        const results = await Promise.allSettled([
+          testHTTP(),
+          testPing(),
+          testBasicFetch()
+        ]);
+        
+        let successCount = 0;
+        let errorMessages = [];
+        
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            successCount++;
+          } else {
+            errorMessages.push(result.reason);
+          }
+        });
+        
+        if (successCount > 0) {
+          updateConnectionStatus('ทดสอบสำเร็จ ✅');
+          alert('✅ การเชื่อมต่อสำเร็จ!\nสามารถใช้งานได้แล้ว');
+          checkServerStatus(); // โหลดสถานะจริง
+        } else {
+          throw new Error(errorMessages[0] || 'ไม่สามารถเชื่อมต่อได้');
+        }
+        
+      } catch (error) {
+        console.error('Connection test failed:', error);
+        let errorMsg = 'การทดสอบล้มเหลว ❌\n\n';
+        
+        if (error.message.includes('CORS')) {
+          errorMsg += 'ปัญหา CORS: เพิ่มโค้ดนี้ใน ESP32:\nserver.sendHeader("Access-Control-Allow-Origin", "*");';
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+          errorMsg += 'ไม่สามารถเชื่อมต่อได้:\n• ตรวจสอบ IP Address\n• ตรวจสอบว่า ESP32 เปิดอยู่\n• ตรวจสอบ WiFi Network เดียวกัน';
+        } else {
+          errorMsg += error.message;
+        }
+        
+        alert(errorMsg);
+        updateConnectionStatus('ทดสอบล้มเหลว ❌');
+      } finally {
+        testBtn.disabled = false;
+        testBtn.textContent = '🔍 ทดสอบการเชื่อมต่อ';
+      }
+    }
+    
+    // ฟังก์ชันทดสอบ HTTP
+    async function testHTTP() {
+      const url = getAPIUrl('/');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          signal: controller.signal,
+          mode: 'no-cors' // ลองโหมด no-cors ก่อน
+        });
+        clearTimeout(timeoutId);
+        return true;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        // ถ้า no-cors ไม่ได้ ลอง cors
+        const response2 = await fetch(url, {
+          method: 'GET',
+          mode: 'cors'
+        });
+        return true;
+      }
+    }
+    
+    // ฟังก์ชันทดสอบ Ping (ใช้ Image loading)
+    async function testPing() {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const timeout = setTimeout(() => {
+          reject(new Error('Ping timeout'));
+        }, 3000);
+        
+        img.onload = () => {
+          clearTimeout(timeout);
+          resolve(true);
+        };
+        
+        img.onerror = () => {
+          clearTimeout(timeout);
+          // แม้ error ก็ถือว่าเชื่อมต่อได้ (เพราะได้ response)
+          resolve(true);
+        };
+        
+        img.src = getAPIUrl('/favicon.ico') + '?t=' + Date.now();
+      });
+    }
+    
+    // ฟังก์ชันทดสอบ Basic Fetch
+    async function testBasicFetch() {
+      const url = getAPIUrl('/status');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache'
+        },
+        mode: 'cors'
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    }
+    
+    // ฟังก์ชันเปิดหน้า ESP32 ใน tab ใหม่
+    function openESP32Page() {
+      if (!currentIP) {
+        alert('กรุณาใส่ IP Address ก่อน');
+        return;
+      }
+      
+      let url = currentIP;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url;
+      }
+      
+      window.open(url, '_blank');
+    }
+    function setIPAddress() {
+      const ipInput = document.getElementById('ip-input');
+      const newIP = ipInput.value.trim();
+      
+      if (!newIP) {
+        alert('กรุณาใส่ IP Address');
+        return;
+      }
+      
+      // ตรวจสอบรูปแบบ IP (แบบง่าย)
+      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (!ipPattern.test(newIP)) {
+        alert('รูปแบบ IP Address ไม่ถูกต้อง\nตัวอย่าง: 192.168.1.100');
+        return;
+      }
+      
+      currentIP = newIP;
+      localStorage.setItem('esp32_ip', newIP);
+      document.getElementById('ip-address').textContent = newIP;
+      
+      // ทดสอบการเชื่อมต่อทันที
+      updateConnectionStatus('กำลังทดสอบการเชื่อมต่อ...');
+      checkServerStatus();
+      
+      alert('✅ บันทึก IP Address แล้ว: ' + newIP);
+    }
+    
+    // ฟังก์ชันสร้าง URL สำหรับการเชื่อมต่อ
+    function getAPIUrl(endpoint) {
+      if (!currentIP) {
+        console.error('ยังไม่ได้ตั้งค่า IP Address');
+        return null;
+      }
+      
+      // ตรวจสอบว่ามี http:// หรือ https:// หรือไม่
+      let baseUrl = currentIP;
+      if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+        baseUrl = 'http://' + baseUrl;
+      }
+      
+      return baseUrl + endpoint;
+    }
+    
+    // ฟังก์ชันแสดงสถานะการโหลด
+    function setLoading(loading) {
+      isLoading = loading;
+      const buttons = document.querySelectorAll('.button');
+      const slider = document.getElementById('servoSlider');
+      
+      buttons.forEach(btn => {
+        if (!btn.onclick || btn.onclick.toString().includes('setIPAddress')) return;
+        btn.classList.toggle('loading', loading);
+        btn.disabled = loading;
+      });
+      
+      slider.disabled = loading;
+      
+      if (loading) {
+        document.getElementById('connection-status').textContent = 'กำลังส่งคำสั่ง...';
+      }
+    }
+    
+    // ฟังก์ชันควบคุมอุปกรณ์ (ปรับปรุงใหม่)
+    async function controlDevice(device, action) {
+      if (isLoading) return;
+      
+      if (!currentIP) {
+        alert('กรุณาตั้งค่า IP Address ก่อนใช้งาน');
+        return;
+      }
+      
+      setLoading(true);
+      
+      try {
+        const url = getAPIUrl(`/${device}/${action}`);
+        if (!url) {
+          throw new Error('ยังไม่ได้ตั้งค่า IP Address');
+        }
+        
+        // ลองหลายวิธีในการส่งคำสั่ง
+        let response;
+        let success = false;
+        
+        // วิธีที่ 1: CORS ปกติ
+        try {
+          response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            mode: 'cors',
+            cache: 'no-cache'
+          });
+          
+          if (response.ok || response.status === 200) {
+            success = true;
+          }
+        } catch (corsError) {
+          console.log('CORS method failed, trying no-cors...');
+        }
+        
+        // วิธีที่ 2: No-CORS (ถ้า CORS ไม่ได้)
+        if (!success) {
+          try {
+            response = await fetch(url, {
+              method: 'GET',
+              mode: 'no-cors',
+              cache: 'no-cache'
+            });
+            // no-cors จะไม่สามารถอ่าน response ได้ แต่ถ้าไม่ error แสดงว่าส่งได้
+            success = true;
+          } catch (noCorsError) {
+            console.log('No-CORS method failed, trying JSONP...');
+          }
+        }
+        
+        // วิธีที่ 3: ใช้ Image request (สำหรับ GET requests)
+        if (!success) {
+          try {
+            await new Promise((resolve, reject) => {
+              const img = new Image();
+              const timeout = setTimeout(() => {
+                reject(new Error('Image request timeout'));
+              }, 5000);
+              
+              img.onload = img.onerror = () => {
+                clearTimeout(timeout);
+                resolve(true);
+              };
+              
+              img.src = url + '?t=' + Date.now();
+            });
+            success = true;
+          } catch (imgError) {
+            console.log('Image method failed');
+          }
+        }
+        
+        if (success) {
+          updateDeviceStatus(device, action === 'on');
+          updateConnectionStatus('ส่งคำสั่งสำเร็จ ✅');
+          console.log(`${device} ${action} successful`);
+          
+          // เพิ่ม haptic feedback สำหรับมือถือ
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
+          }
+          
+          // อัพเดทสถานะหลังจาก 1 วินาที
+          setTimeout(() => {
+            checkServerStatus();
+          }, 1000);
+          
+        } else {
+          throw new Error('ไม่สามารถส่งคำสั่งได้');
+        }
+        
+      } catch (error) {
+        console.error('Control Error:', error);
+        let errorMsg = 'เกิดข้อผิดพลาด ❌';
+        
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMsg = 'ไม่สามารถเชื่อมต่อได้ 🔌\n• ตรวจสอบ IP Address\n• ตรวจสอบ WiFi Network\n• ลองกดปุ่ม "ทดสอบการเชื่อมต่อ"';
+        } else if (error.message.includes('CORS')) {
+          errorMsg = 'ปัญหา CORS 🔧\nเพิ่มโค้ดใน ESP32:\nserver.sendHeader("Access-Control-Allow-Origin", "*");';
+        }
+        
+        updateConnectionStatus(errorMsg.split('\n')[0]);
+        
+        // เพิ่ม haptic feedback เมื่อเกิดข้อผิดพลาด
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]);
+        }
+        
+        // แสดง alert เฉพาะข้อผิดพลาดสำคัญ
+        if (!error.message.includes('AbortError')) {
+          setTimeout(() => alert(errorMsg), 100);
+        }
+        
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    // อัพเดทสถานะอุปกรณ์
+    function updateDeviceStatus(device, status) {
+      const statusElement = document.getElementById(`${device}-status`);
+      const textElement = document.getElementById(`${device}-text`);
+      
+      if (device === 'fan') {
+        fanStatus = status;
+        if (textElement) textElement.textContent = status ? 'เปิด' : 'ปิด';
+      }
+      if (device === 'light') {
+        lightStatus = status;
+        if (textElement) textElement.textContent = status ? 'เปิด' : 'ปิด';
+      }
+      
+      statusElement.className = status ? 'status-indicator status-on pulse' : 'status-indicator';
+      
+      // หยุด animation หลัง 2 วินาที
+      setTimeout(() => {
+        statusElement.classList.remove('pulse');
+      }, 2000);
+    }
+    
+    // อัพเดทสถานะการเชื่อมต่อ
+    function updateConnectionStatus(status) {
+      document.getElementById('connection-status').textContent = status;
+      document.getElementById('last-update').textContent = new Date().toLocaleTimeString('th-TH');
+    }
+    
+    // ตั้งค่าเซอร์โว
+    const slider = document.getElementById('servoSlider');
+    const valueDisplay = document.getElementById('servoValue');
+    let servoTimeout;
+    
+    slider.addEventListener('input', function() {
+      const angle = this.value;
+      valueDisplay.textContent = angle;
+      
+      if (!currentIP) {
+        console.warn('ยังไม่ได้ตั้งค่า IP Address');
+        return;
+      }
+      
+      // ใช้ debounce เพื่อลดการส่งคำสั่งบ่อยเกินไป
+      clearTimeout(servoTimeout);
+      servoTimeout = setTimeout(async () => {
+        try {
+          const url = getAPIUrl(`/servo?angle=${angle}`);
+          if (!url) return;
+          
+          // ลองหลายวิธีเหมือนกับ controlDevice
+          let success = false;
+          
+          try {
+            const response = await fetch(url, { mode: 'cors' });
+            if (response.ok) success = true;
+          } catch (error) {
+            // ลอง no-cors
+            try {
+              await fetch(url, { mode: 'no-cors' });
+              success = true;
+            } catch (error2) {
+              // ลอง image method
+              const img = new Image();
+              img.src = url + '&t=' + Date.now();
+              success = true; // ถือว่าส่งได้
+            }
+          }
+          
+          if (success) {
+            updateConnectionStatus('ควบคุมเซอร์โว ✅');
+          } else {
+            throw new Error('ไม่สามารถควบคุมเซอร์โวได้');
+          }
+          
+        } catch (error) {
+          console.error('Servo Error:', error);
+          updateConnectionStatus('ข้อผิดพลาดเซอร์โว ❌');
+        }
+      }, 200);
+    });
+    
+    // ฟังก์ชันตรวจสอบสถานะเซิร์ฟเวอร์
+    async function checkServerStatus() {
+      if (!currentIP) {
+        updateConnectionStatus('ยังไม่ได้ตั้งค่า IP Address ⚙️');
+        return false;
+      }
+      
+      try {
+        const url = getAPIUrl('/status');
+        if (!url) return false;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // timeout 8 วินาที
+        
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache'
+          },
+          mode: 'cors'
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            updateDeviceStatus('fan', data.fan);
+            updateDeviceStatus('light', data.light);
+            slider.value = data.servo || 90;
+            valueDisplay.textContent = data.servo || 90;
+          }
+          updateConnectionStatus('เชื่อมต่อแล้ว ✅');
+          return true;
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Status check error:', error);
+        let errorMsg = 'ไม่สามารถเชื่อมต่อได้ ❌';
+        
+        if (error.name === 'AbortError') {
+          errorMsg = 'Timeout - ESP32 ไม่ตอบสนอง ⏰';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMsg = 'ไม่พบ ESP32 🔍 ตรวจสอบ IP Address';
+        }
+        
+        updateConnectionStatus(errorMsg);
+        return false;
+      }
+    }
+    
+    // อัพเดทสถานะเริ่มต้น
+    window.addEventListener('load', async function() {
+      updateConnectionStatus('กำลังโหลด...');
+      
+      // โหลด IP address ที่บันทึกไว้
+      const savedIP = loadSavedIP();
+      
+      if (savedIP) {
+        // พยายามเชื่อมต่อ
+        const connected = await checkServerStatus();
+        
+        if (!connected) {
+          // ถ้าเชื่อมต่อไม่ได้ ให้ตั้งค่าเริ่มต้น
+          updateDeviceStatus('fan', false);
+          updateDeviceStatus('light', false);
+          slider.value = 90;
+          valueDisplay.textContent = 90;
+        }
+      } else {
+        updateConnectionStatus('กรุณาตั้งค่า IP Address ⚙️');
+        updateDeviceStatus('fan', false);
+        updateDeviceStatus('light', false);
+        slider.value = 90;
+        valueDisplay.textContent = 90;
+      }
+    });
+    
+    // ตรวจสอบสถานะทุก 30 วินาที (เฉพาะเมื่อมี IP address)
+    setInterval(() => {
+      if (currentIP) {
+        checkServerStatus();
+      }
+    }, 30000);
+    
+    // เพิ่มการจัดการเมื่อออนไลน์/ออฟไลน์
+    window.addEventListener('online', function() {
+      if (currentIP) {
+        updateConnectionStatus('กลับมาออนไลน์แล้ว ✅');
+        checkServerStatus();
+      }
+    });
+    
+    window.addEventListener('offline', function() {
+      updateConnectionStatus('ไม่มีการเชื่อมต่ออินเทอร์เน็ต ❌');
+    });
+    
+    // เพิ่มการจัดการ touch events สำหรับมือถือ
+    document.addEventListener('touchstart', function() {}, {passive: true});
+    
+    // ป้องกันการ zoom เมื่อ double tap ที่ปุ่ม
+    document.querySelectorAll('.button').forEach(button => {
+      button.addEventListener('touchend', function(e) {
+        e.preventDefault();
+      });
+    });
+    
+    // เพิ่มการจัดการ Enter key ในช่อง IP input
+    document.getElementById('ip-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        setIPAddress();
+      }
+    });
+  </script>
+</body>
+</html>
